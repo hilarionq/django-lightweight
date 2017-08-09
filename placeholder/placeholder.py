@@ -24,6 +24,10 @@ settings.configure(
     ),
 )
 
+def placeholder(request, width, height):
+    # TODO: Rest of the view will fo here
+    return HttpResponse('Ok')
+
 def index(request):
     return HttpResponse('Hello World')
 
