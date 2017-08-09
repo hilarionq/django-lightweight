@@ -1,9 +1,10 @@
 import os
 import sys
 import hashlib
-from io import BytesIO
 
+from io import BytesIO
 from PIL import Image, ImageDraw
+
 from django.conf import settings
 from django.conf.urls import url
 from django.core.wsgi import get_wsgi_application
@@ -11,10 +12,14 @@ from django.http import HttpResponse, HttpResponseBadRequest
 from django import forms
 from django.core.cache import cache
 from django.views.decorators.http import etag
+from django.shortcuts import render
+from django.core.urlresolvers import reverse
 
 DEBUG =  os.environ.get('DEBUG', 'on') == 'on'
 
 SECRET_KEY = os.environ.get('SECRET_KEY', '3b+od-h8m@3&itu8lqz0n8vgg%*=7q!b18xp)#%*jcj#-(-=px')
+
+BASE_DIR = os.path.dirname(__file__)
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS','localhost').split(',')
 
@@ -28,6 +33,16 @@ settings.configure(
         'django.middleware.csrf.CsrfViewMiddleware',
         'django.middleware.clickjacking.XFrameOptionsMiddleware',
     ),
+    INSTALLED_APPS=(
+        'django.contrib.staticfiles',
+    ),
+    TEMPLATE_DIRS=(
+        os.path.join(BASE_DIR, 'templates'),
+    ),
+    STATICFILES_DIRS=(
+        os.path.join(BASE_DIR, 'static'),
+    ),
+    STATIC_URL='/static/',
 )
 
 class ImageForm(forms.Form):
@@ -66,16 +81,20 @@ def placeholder(request, width, height):
     form = ImageForm({'height': height, 'width': width})
     if form.is_valid():
         image = form.generate()
-        # TODO: Generate image of requested size
         return HttpResponse(image, content_type='image/png')
     else:
         return HttpResponseBadRequest('Invalid Image Request')
 
+
 def index(request):
-    return HttpResponse('Hello World')
+    example = reverse('placeholder', kwargs={'width': 50, 'height': 50})
+    context = {
+        'example': request.build_absolute_uri(example)
+    }
+    return render(request, 'home.html', context)
 
 urlpatterns = (
-    url(r'^$', index),
+    url(r'^$', index, name='homepage'),
     url(r'^image/(?P<width>[0-9]+)x(?P<height>[0-9]+)/$', placeholder, name='placeholder'),
 )
 
